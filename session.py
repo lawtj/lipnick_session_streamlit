@@ -322,14 +322,23 @@ with st.sidebar:
     st.markdown('Click [here](https://docs.google.com/spreadsheets/d/1fFLITWYsDQYx_rDuYvF1bGgqf-PqbKUVcvQ4I0OTXe0/edit?usp=sharing) to enter comments on the Google Sheet')
     st.markdown('### Filters')
     st.write('Show only those sessions containing at least one sample greater than:')
-    so2_range_thresh = st.slider('SO2 Range Threshold', 0, 20, 2)
+    so2_range_thresh = st.slider('SO2 Range Threshold', 0, 20, 0)
     masimo_bias_thresh = st.slider('Masimo Bias Threshold', 0, 20, 6)
     nellcor_bias_thresh = st.slider('Nellcor Bias Threshold', 0, 20, 0)
-    sessions = labview_session_abg.query('masimo_abs_bias > @masimo_bias_thresh and nellcor_abs_bias > @nellcor_bias_thresh')['session'].sort_values().unique().tolist()
+
+    so2_sessions = labview_session_abg.query('so2_range >= @so2_range_thresh')['session'].unique().tolist()
+    masimo_sessions = labview_session_abg.query('masimo_abs_bias > @masimo_bias_thresh')['session'].unique().tolist()
+    nellcor_sessions = labview_session_abg.query('nellcor_abs_bias > @nellcor_bias_thresh')['session'].unique().tolist()
+
+    sessions= list(set(so2_sessions) & set(masimo_sessions) & set(nellcor_sessions))
+    
     st.divider()
     st.write('Total number of sessions: ', len(labview_session_abg['session'].unique()))
-    st.write(len(sessions), 'sessions match these criteria')
-    session = st.selectbox('Select a session', sessions)
+    if len(sessions) <1:
+        st.error('No sessions match these criteria')
+    else:
+        st.write(len(sessions), 'sessions match these criteria')
+        session = st.selectbox('Select a session', sessions)
     
 frame = labview_session_abg[labview_session_abg['session']==session][['session', 'Sample', 'so2_range', 'so2',  'Masimo 97/SpO2',  'Masimo 97/PI', 'masimo_bias','nellcor_bias','Nellcor/SpO2']]
 colormap = {'Masimo 97/SpO2':'IndianRed',
@@ -355,6 +364,7 @@ fig = (px.scatter(
 
 st.markdown('## Session ' + str(session))
 one, two = st.columns(2)
+
 with one:
     st.plotly_chart(fig)
 with two:
