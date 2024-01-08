@@ -358,8 +358,10 @@ fig = (px.scatter(
         yanchor="bottom",
         y=1.02,
         xanchor="right",
-        x=1
-    ))
+        x=1))
+    .add_hline(y=masimo_bias_thresh, line_width=1, line_dash="dash", line_color="#FFBF00")
+    # show every xtick
+    .update_xaxes(dtick=1)
 )
 
 st.markdown('## Session ' + str(session))
