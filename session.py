@@ -331,7 +331,7 @@ with st.sidebar:
     st.write(len(sessions), 'sessions match these criteria')
     session = st.selectbox('Select a session', sessions)
     
-frame = labview_session_abg[labview_session_abg['session']==session][['session', 'Sample', 'masimo_bias', 'so2_range', 'so2', 'Masimo 97/SpO2', 'nellcor_bias','Nellcor/SpO2']]
+frame = labview_session_abg[labview_session_abg['session']==session][['session', 'Sample', 'so2_range', 'so2',  'Masimo 97/SpO2',  'Masimo 97/PI', 'masimo_bias','nellcor_bias','Nellcor/SpO2']]
 colormap = {'Masimo 97/SpO2':'IndianRed',
             'masimo_bias':'IndianRed',
             'Nellcor/SpO2':'palegreen',
@@ -340,11 +340,18 @@ colormap = {'Masimo 97/SpO2':'IndianRed',
             'so2_range':'powderblue'}
 
 fig = (px.scatter(
-    frame, x='Sample', y=['masimo_bias', 'so2_range', 'so2', 'Masimo 97/SpO2', 'nellcor_bias','Nellcor/SpO2'], color_discrete_map=colormap,)
+    frame, x='Sample', y=['Masimo 97/SpO2', 'masimo_bias','Nellcor/SpO2','nellcor_bias','so2','so2_range'], color_discrete_map=colormap,)
     .update_traces(marker=dict(size=12,opacity=0.8, 
                     line=dict(width=2,color='DarkSlateGrey')))
+    #horizontal legend
+    .update_layout(legend=dict(
+        orientation="h",
+        yanchor="bottom",
+        y=1.02,
+        xanchor="right",
+        x=1
+    ))
 )
-
 
 st.markdown('## Session ' + str(session))
 one, two = st.columns(2)
