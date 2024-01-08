@@ -7,10 +7,6 @@ import io
 
 st.set_page_config(layout="wide")
 
-
-api_url = 'https://redcap.ucsf.edu/api/'
-api_k = st.secrets['api_k']
-proj = Project(api_url, api_k)
 sessionlist = [194.0,
  197.0,
  198.0,
@@ -309,6 +305,9 @@ sessionlist = [194.0,
  442.0,
  441.0]
 if 'labview_session_abg' not in st.session_state:
+    api_url = 'https://redcap.ucsf.edu/api/'
+    api_k = st.secrets['api_k']
+    proj = Project(api_url, api_k)
     f = io.BytesIO(proj.export_file(record='2', field='file')[0])
     labview_session_abg = pd.read_parquet(f)
     labview_session_abg = labview_session_abg[labview_session_abg['session'].isin(sessionlist)]
@@ -331,6 +330,7 @@ with st.sidebar:
     nellcor_sessions = labview_session_abg.query('nellcor_abs_bias > @nellcor_bias_thresh')['session'].unique().tolist()
 
     sessions= list(set(so2_sessions) & set(masimo_sessions) & set(nellcor_sessions))
+    sessions.sort()
     
     st.divider()
     st.write('Total number of sessions: ', len(labview_session_abg['session'].unique()))
