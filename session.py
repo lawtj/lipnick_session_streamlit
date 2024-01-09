@@ -313,6 +313,7 @@ if 'labview_session_abg' not in st.session_state:
     labview_session_abg = labview_session_abg[labview_session_abg['session'].isin(sessionlist)]
     labview_session_abg['masimo_abs_bias'] = np.abs(labview_session_abg['masimo_bias'])
     labview_session_abg['nellcor_abs_bias'] = np.abs(labview_session_abg['nellcor_bias'])
+    st.session_state['labview_session_abg'] = labview_session_abg
 else:
     labview_session_abg = st.session_state['labview_session_abg']
 
