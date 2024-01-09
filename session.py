@@ -367,7 +367,6 @@ fig = (px.scatter(
 st.markdown('## Session ' + str(session))
 one, two = st.columns(2)
 
-with one:
-    st.plotly_chart(fig)
-with two:
-    st.dataframe(frame, hide_index=True)
+st.plotly_chart(fig, use_container_width=True)
+st.dataframe(frame, hide_index=True, height=800, width=1200)
+# st.table(frame,)
