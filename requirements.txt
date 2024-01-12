@@ -1,4 +1,4 @@
 pycap
 plotly
 pandas
-openpyxlf
+openpyxl
