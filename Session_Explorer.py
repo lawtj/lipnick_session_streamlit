@@ -315,6 +315,7 @@ if 'labview_session_abg' not in st.session_state:
     labview_session_abg['nellcor_abs_bias'] = np.abs(labview_session_abg['nellcor_bias'])
     st.session_state['labview_session_abg'] = labview_session_abg
 else:
+    st.caption('Using cached data')
     labview_session_abg = st.session_state['labview_session_abg']
 
 with st.sidebar:
