@@ -1,3 +1,4 @@
 pycap
 plotly
 pandas
+openpyxlf
