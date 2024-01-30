@@ -309,7 +309,7 @@ if 'labview_session_abg' not in st.session_state:
     api_k = st.secrets['REDCAP_DANNI']
     proj = Project(api_url, api_k)
     f = io.BytesIO(proj.export_file(record='2', field='file')[0])
-    labview_session_abg = pd.read_csv(f)
+    labview_session_abg = pd.read_parquet(f)
     # labview_session_abg = labview_session_abg[labview_session_abg['session'].isin(sessionlist)]
     labview_session_abg['masimo_abs_bias'] = np.abs(labview_session_abg['masimo_bias'])
     labview_session_abg['nellcor_abs_bias'] = np.abs(labview_session_abg['nellcor_bias'])
