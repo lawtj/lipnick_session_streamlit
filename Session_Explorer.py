@@ -342,7 +342,7 @@ with st.sidebar:
         st.write(len(sessions), 'sessions match these criteria')
         session = st.selectbox('Select a session', sessions)
     
-frame = labview_session_abg[labview_session_abg['session']==session][['session', 'Sample', 'so2_range', 'so2',  'Masimo 97/SpO2',  'Masimo 97/PI', 'masimo_bias','nellcor_bias','Nellcor/SpO2']]
+frame = labview_session_abg[labview_session_abg['session']==session][['session', 'Sample', 'so2_range', 'so2',  'Masimo 97/SpO2',  'Masimo 97/PI', 'masimo_bias','nellcor_bias','Nellcor/SpO2','Nellcor/PI']]
 colormap = {'Masimo 97/SpO2':'IndianRed',
             'masimo_bias':'IndianRed',
             'Nellcor/SpO2':'palegreen',
