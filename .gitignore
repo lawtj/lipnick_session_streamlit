@@ -2,3 +2,4 @@ config.py
 sess.ipynb
 .streamlit
 __pycache__
+*.parquet
