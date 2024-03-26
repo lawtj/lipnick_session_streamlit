@@ -153,8 +153,8 @@ def create_scatter(frame):
     fig = go.Figure()
 
     # Adding traces with customized marker style based on name_keep
-    # for column, keepcolumn in zip(['Masimo 97/SpO2', 'Nellcor/SpO2', 'so2'], ['masimo_keep', 'nellcor_keep', 'so2_compare']):
-    for column, keepcolumn in zip(['so2'], ['so2_compare']):
+    for column, keepcolumn in zip(['Masimo 97/SpO2', 'Nellcor/SpO2', 'so2'], ['masimo_keep', 'nellcor_keep', 'so2_compare']):
+    # for column, keepcolumn in zip(['so2'], ['so2_compare']):
         fig.add_trace(go.Scatter(
             x=frame['sample'], y=frame[column],
             mode='markers',
