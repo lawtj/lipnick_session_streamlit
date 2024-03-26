@@ -1,4 +1,8 @@
 import plotly.graph_objects as go
+import numpy as np
+
+def arms(spo2,sao2):
+    return np.sqrt(np.mean((spo2-sao2)**2))
 
 
 colormap = {'Masimo 97/SpO2':'IndianRed',
@@ -6,7 +10,8 @@ colormap = {'Masimo 97/SpO2':'IndianRed',
             'Nellcor/SpO2':'palegreen',
             'nellcor_bias':'palegreen',
             'so2':'powderblue',
-            'so2_range':'powderblue'}
+            'so2_range':'powderblue',
+            'so2_compare':'powderblue',}
 
 def threesamples(abg):
     ## goal: if the CRC was doing 3 runs for the blood sample, throw out the so2 value that is off
@@ -131,6 +136,10 @@ def apply_sample_stability(df, value_to_check, newcol_name, bound):
 def assign_marker_style(name_keep):
     if name_keep == 'keep':
         return 'circle'
+    elif name_keep == 'manual rejection':
+        return 'bowtie'
+    elif name_keep == 'algorithm rejection':
+        return 'hourglass'
     elif name_keep == 'reject':
         return 'cross'
 
@@ -144,7 +153,8 @@ def create_scatter(frame):
     fig = go.Figure()
 
     # Adding traces with customized marker style based on name_keep
-    for column, keepcolumn in zip(['Masimo 97/SpO2', 'Nellcor/SpO2', 'so2'], ['masimo_keep', 'nellcor_keep', 'so2_keep']):
+    # for column, keepcolumn in zip(['Masimo 97/SpO2', 'Nellcor/SpO2', 'so2'], ['masimo_keep', 'nellcor_keep', 'so2_compare']):
+    for column, keepcolumn in zip(['so2'], ['so2_compare']):
         fig.add_trace(go.Scatter(
             x=frame['sample'], y=frame[column],
             mode='markers',

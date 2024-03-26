@@ -21,7 +21,7 @@ else:
     labview_samples = st.session_state['labview_samples']
 
 from session_functions import threesamples, recalculate_so2_range, sample_stability, apply_sample_stability, assign_marker_color, assign_marker_style
-from session_functions import colormap, create_scatter
+from session_functions import colormap, create_scatter, arms
 
 
 with st.sidebar:
@@ -38,5 +38,8 @@ with st.sidebar:
 
 st.markdown('## Session ' + str(selected_session))
 st.plotly_chart(create_scatter(frame))
-labview_samples = labview_samples[['session','sample', 'so2', 'so2_previous','so2_next','so2_keep', 'Masimo 97/SpO2', 'masimo_previous','masimo_next','masimo_keep','Nellcor/SpO2', 'nellcor_previous','nellcor_next','nellcor_keep']].style.format(precision=2).map(lambda x: 'background-color: yellow' if 'reject' in str(x) else '')
-st.write(labview_samples)
+labview_samples_filter = labview_samples[['session','sample', 'so2', 'so2_previous','so2_next','so2_keep', 'Masimo 97/SpO2', 'masimo_previous','masimo_next','masimo_keep','Nellcor/SpO2', 'nellcor_previous','nellcor_next','nellcor_keep']].style.format(precision=2).map(lambda x: 'background-color: yellow' if 'reject' in str(x) else '')
+st.write(labview_samples_filter)
+
+
+

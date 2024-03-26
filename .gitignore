@@ -3,3 +3,5 @@ sess.ipynb
 .streamlit
 __pycache__
 *.parquet
+*.ipynb
+*.csv
