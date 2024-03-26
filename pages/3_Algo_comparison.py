@@ -20,7 +20,7 @@ def get_labview_samples():
 labview_samples = get_labview_samples()
 
 from session_functions import threesamples, recalculate_so2_range, sample_stability, apply_sample_stability, assign_marker_color, assign_marker_style
-from session_functions import colormap, create_scatter, arms
+from session_functions import colormap, create_scatter, arms, so2_compare
 
 
 with st.sidebar:
@@ -30,6 +30,7 @@ with st.sidebar:
     sample_stability_threshold = st.number_input('Sample Stability Threshold', 0.0, 20.0, 1.5, 0.1)
     for i, j in zip(['so2','Masimo 97/SpO2','Nellcor/SpO2'], ['so2','masimo','nellcor']):
         labview_samples = apply_sample_stability(labview_samples, i, j, sample_stability_threshold)
+    labview_samples['so2_compare'] = labview_samples.apply(so2_compare, axis=1)
     
     selected_session = st.selectbox('Select a session', labview_samples['session'].unique().tolist())
 

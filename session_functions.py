@@ -184,3 +184,13 @@ def create_scatter(frame):
     )
 
     return fig
+
+def so2_compare(row):
+    if (row['manual_clean_so2'] == 'reject') & (row['so2_keep'] == 'keep'):
+        return 'manual rejection'
+    elif (row['manual_clean_so2'] == 'keep') & (row['so2_keep'] == 'reject'):
+        return 'algorithm rejection'
+    elif (row['manual_clean_so2'] == 'reject') & (row['so2_keep'] == 'reject'):
+        return 'reject'
+    else:
+        return 'keep'
