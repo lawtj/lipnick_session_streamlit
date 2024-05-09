@@ -9,11 +9,6 @@ import io
 import re
 from datetime import datetime, time
 
-#load all data from redcap
-# requires a config.py file with a redcap dictionary containing api keys
-# e.g redcap = {'REDCAP_SESSION': 'api_key'}
-# returns pycap project and dataframe
-# typical usage: proj_session, session = load_project('session')
 def load_project(key):
     """
     Load all data from REDCap using API key specified by 'key'.
@@ -335,7 +330,7 @@ def extract_values_by_sample(df, sessioncol, samplecol, average_over, cols_to_su
 
 import pandas as pd
 
-def sample_stability_multi(df, so2_col, nellcor_col, timestamp_col, output_newcol_name, bound):
+def sample_stability_multi(df, so2_col, nellcor_col, timestamp_col, output_newcol_name, so2_bound, ref_bound):
     """
     Checks the stability of so2 and Nellcor samples in the DataFrame, rejecting unstable readings.
     
@@ -366,16 +361,29 @@ def sample_stability_multi(df, so2_col, nellcor_col, timestamp_col, output_newco
         # >> Fill NaN values with 0 for the first samples because they dont have a previous time.
         df.loc[df['sample'] == 1, f'{col}_diff_prev'] = df.loc[df['sample'] == 1, f'{col}_diff_prev'].fillna(0) 
 
+    def check_bound(row, check_col, bound):
+        if abs(row[f'{check_col}_diff_prev']) >= bound:  # Check previous sample. If outside of bound, check next sample
+            if abs(row[f'{check_col}_diff_next']) >= bound:
+                return pd.Series([False, 'reject because both previous and next samples are outside bound'])
+            else:
+                return pd.Series([True, 'keep because next sample is within bound'])
+        else:
+            return pd.Series([True, 'keep because previous sample is within bound'])
 
-    # Determine stability for both so2 and Nellcor
-    df['so2_stable'] = ((abs(df[f'{so2_col}_diff_prev']) <= bound) & (abs(df[f'{so2_col}_diff_next']) <= bound))
-    df['Nellcor_stable'] = ((abs(df[f'{nellcor_col}_diff_prev']) <= bound) & (abs(df[f'{nellcor_col}_diff_next']) <= bound))
+    # Apply the function and assign results to two new columns
+    df[['so2_stable', 'so2_reason']] = df.apply(check_bound, axis=1, check_col=so2_col, bound=so2_bound)
+
+    # If you also need to apply it for 'Nellcor', repeat with the appropriate column names
+    df[['Nellcor_stable', 'Nellcor_reason']] = df.apply(check_bound, axis=1, check_col=nellcor_col, bound=ref_bound)
 
     # Combine stability decisions
-    df[output_newcol_name] = ((df['so2_stable'] & df['Nellcor_stable'])).replace({True: 'keep', False: 'reject'})
+    # df[output_newcol_name] = ((df['so2_stable'] & df['Nellcor_stable'])).replace({True: 'keep', False: 'reject'})
+    # label output_newcol_name based on combination of so2 and nellcor stability. if both kept, then keep. if so2 kept but nellcor rejected, then 'reject_nellcor'. if so2 rejected but nellcor kept, then 'reject_so2'. if both rejected, then 'reject_both'
+    df[output_newcol_name] = ((df['so2_stable'] & df['Nellcor_stable'])).replace({True: 'keep', False: 'reject_both'})
+    df.loc[(df['so2_stable'] & ~df['Nellcor_stable']), output_newcol_name] = 'reject_nellcor'
+    df.loc[(~df['so2_stable'] & df['Nellcor_stable']), output_newcol_name] = 'reject_so2'
 
-    # Drop intermediate columns
-    # df.drop([col for col in df.columns if 'diff' in col or 'stable' in col], axis=1, inplace=True)
+
     
-    return df
+    return df, df[output_newcol_name].value_counts().to_dict()
 
