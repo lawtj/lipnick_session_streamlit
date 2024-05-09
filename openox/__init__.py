@@ -379,7 +379,8 @@ def sample_stability_multi(df, so2_col, nellcor_col, timestamp_col, output_newco
     # Combine stability decisions
     # df[output_newcol_name] = ((df['so2_stable'] & df['Nellcor_stable'])).replace({True: 'keep', False: 'reject'})
     # label output_newcol_name based on combination of so2 and nellcor stability. if both kept, then keep. if so2 kept but nellcor rejected, then 'reject_nellcor'. if so2 rejected but nellcor kept, then 'reject_so2'. if both rejected, then 'reject_both'
-    df[output_newcol_name] = ((df['so2_stable'] & df['Nellcor_stable'])).replace({True: 'keep', False: 'reject_both'})
+    df[output_newcol_name+'_status'] = ((df['so2_stable'] & df['Nellcor_stable']))
+    df[output_newcol_name] = ((df['so2_stable'] & df['Nellcor_stable'])).replace({True: 'keep', False: 'reject_both'})   
     df.loc[(df['so2_stable'] & ~df['Nellcor_stable']), output_newcol_name] = 'reject_nellcor'
     df.loc[(~df['so2_stable'] & df['Nellcor_stable']), output_newcol_name] = 'reject_so2'
 
