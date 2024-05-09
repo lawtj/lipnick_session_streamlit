@@ -9,11 +9,16 @@ colormap = {'Masimo 97/SpO2':'IndianRed',
             'so2_range':'powderblue'}
 
 def threesamples(abg):
-    ## goal: if the CRC was doing 3 runs for the blood sample, throw out the so2 value that is off
-    # group by encountercol and sample and count the number of so2 values
-    # if there are only two so2 values, then the so2 range is the difference between the two so2 values
-    # else if there are more than two samples, calculate the so2 range for the two samples that has so2 value less than 0.5 apart.
-    # else if there are no samples that are less than 0.5 apart, then the so2 range is the difference between the highest and lowest so2 values - werid if has
+    """
+    Applies to ABG dataframe
+
+    goal: if the CRC was doing 3 runs for the blood sample, throw out the so2 value that is off
+    group by encountercol and sample and count the number of so2 values
+    if there are only two so2 values, then the so2 range is the difference between the two so2 values
+    else if there are more than two samples, calculate the so2 range for the two samples that has so2 value less than 0.5 apart.
+    else if there are no samples that are less than 0.5 apart, then the so2 range is the difference between the highest and lowest so2 values - werid if has
+
+    """
     exclude_list = []
 
     for group, sample in abg.groupby(['session','sample']):
@@ -84,23 +89,19 @@ def recalculate_so2_range(df, encountercol):
     ###---------------------------------------------------------------------------------------------------------------------------------------------------------###
     
     so2_range = df.groupby([encountercol,'sample'])['so2'].agg(so2_range=lambda x: x.max() - x.min()).reset_index()
-    # # df = df.merge(so2_range, on=[encountercol,'sample'])
-    # so2_count = len(df[abs(df['so2_range']) > so2thresh])
-    # fig = px.scatter(df, x='sample', y='so2_range', color='sample', template='plotly_white', hover_data=['so2','so2_range','sample','session']) 
-    # fig.update_layout(title='So2 Range by Sample: Number of so2 data points that has range > {} = {}'.format(so2thresh, so2_count))
-    # return fig
     return df
 
 # create a function that checks the value of so2 in each row and compares it to the so2 value of the previous row
-def sample_stability(df, value_to_check, newcol_name, bound):
+def sample_stability(df, column_to_check, output_newcol_name, bound):
     sample_stability_previous = []
     sample_stability_next = []
     value_keep = []
     # iterate through the so2 values and compare the current so2 value to the previous so2 value and the next so2 value
     for i in range(1, len(df)): # check each sample against the previous sample
-        sample_stability_previous.append(df[value_to_check].iloc[i] - df[value_to_check].iloc[i-1])
-        if i != len(df)-1: # if we are not at the last sample, also check the next sample
-            sample_stability_next.append(df[value_to_check].iloc[i] - df[value_to_check].iloc[i+1])        
+        if i != 0: # if we are not at the first sample, keep going. this should keep all first samples.
+            sample_stability_previous.append(df[column_to_check].iloc[i] - df[column_to_check].iloc[i-1])
+            if i != len(df)-1: # if we are not at the last sample, also check the next sample
+                sample_stability_next.append(df[column_to_check].iloc[i] - df[column_to_check].iloc[i+1])        
     # the first sample has no previous sample, so we insert a 0 at the beginning of the list
     sample_stability_previous.insert(0,0)
     sample_stability_next.insert(0,0)
@@ -117,14 +118,14 @@ def sample_stability(df, value_to_check, newcol_name, bound):
         else:
             value_keep.append('keep')
 
-    df[newcol_name + '_previous'] = sample_stability_previous
-    df[newcol_name + '_next'] = sample_stability_next
-    df[newcol_name+ '_keep'] = value_keep
+    df[output_newcol_name + '_previous'] = sample_stability_previous
+    df[output_newcol_name + '_next'] = sample_stability_next
+    df[output_newcol_name+ '_keep'] = value_keep
 
     return df
 
-def apply_sample_stability(df, value_to_check, newcol_name, bound):
-    df = sample_stability(df, value_to_check, newcol_name, bound)
+def apply_sample_stability(df, column_to_check, output_newcol_name, bound):
+    df = sample_stability(df, column_to_check, output_newcol_name, bound)
     return df
 
 # Define a function to assign marker style based on the values of name_keep
