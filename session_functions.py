@@ -5,14 +5,6 @@ def arms(spo2,sao2):
     return np.sqrt(np.mean((spo2-sao2)**2))
 
 
-colormap = {'Masimo 97/SpO2':'IndianRed',
-            'masimo_bias':'IndianRed',
-            'Nellcor/SpO2':'palegreen',
-            'nellcor_bias':'palegreen',
-            'so2':'powderblue',
-            'so2_range':'powderblue',
-            'so2_compare':'powderblue',}
-
 def threesamples(abg):
     """
     Applies to ABG dataframe
@@ -99,41 +91,47 @@ def recalculate_so2_range(df, encountercol):
 
 # Define a function to assign marker style based on the values of name_keep
 def assign_marker_style(name_keep):
-    if name_keep == 'keep':
+    if name_keep == True:
         return 'circle'
-    elif name_keep == 'manual rejection':
+    elif name_keep == False:
         return 'bowtie'
-    elif name_keep == 'algorithm rejection':
+    elif name_keep == False:
         return 'hourglass'
-    elif name_keep == 'reject':
+    elif name_keep == False:
         return 'cross'
 
+colormap = {'Masimo 97/SpO2':'IndianRed',
+            'masimo_bias':'IndianRed',
+            'Nellcor/SpO2':'palegreen',
+            'Nellcor_stable':'palegreen',
+            'so2':'powderblue',
+            'so2_range':'powderblue',
+            'so2_stable':'powderblue',}
+
 def assign_marker_color(name_keep, column):
-    if name_keep == 'keep':
+    if name_keep == True:
         return colormap[column]
     else:
         return 'purple'  # You can define additional conditions and colors as needed
 
-def create_scatter(frame):
+def create_scatter(frame, plotcolumns, stylecolumns):
     fig = go.Figure()
 
     # Adding traces with customized marker style based on name_keep
-    for column, keepcolumn in zip(['Masimo 97/SpO2', 'Nellcor/SpO2', 'so2'], ['masimo_keep', 'nellcor_keep', 'so2_compare']):
+    for plotcolumns, stylecolumns in zip(plotcolumns, stylecolumns):
     # for column, keepcolumn in zip(['so2'], ['so2_compare']):
         fig.add_trace(go.Scatter(
-            x=frame['sample'], y=frame[column],
+            x=frame['sample'], y=frame[plotcolumns],
             mode='markers',
-            name=column,
+            name=plotcolumns,
             marker=dict(
-                symbol=[assign_marker_style(style) for style in frame[keepcolumn]],
-                color=[assign_marker_color(style, column) for style in frame[keepcolumn]],
-                # color=frame[column],  # Marker color based on y value
-                # colorscale='Viridis',  # You can specify a color scale if needed
+                symbol=[assign_marker_style(style) for style in frame[stylecolumns]],
+                color=[assign_marker_color(style, stylecolumns) for style in frame[stylecolumns]],
                 size=12,
                 opacity=0.8,
                 line=dict(width=2, color='DarkSlateGrey')
             ),
-            text=column
+            text=[plotcolumns, stylecolumns],
         ))
 
     # Update layout and show the plot
