@@ -388,3 +388,28 @@ def sample_stability_multi(df, so2_col, nellcor_col, timestamp_col, output_newco
     
     return df, df[output_newcol_name].value_counts().to_dict()
 
+def session_criteria_check(df):
+    """
+    Checks session criteria:
+    1. at least one so2 data point in 97-100 range;
+    2. at least one so2 data point in 67-73 range;
+    3. all plateaus have at least 6 so2 data points;
+    
+    Args:
+        df (pandas.DataFrame): The DataFrame displayed in Algo comparison page.
+    
+    Returns:
+        criteria_check_tuple: A tuple containing the True/False results of the 3 session criteria checks.
+        criteria_check_df: A DataFrame contains more info about session check and is displayed on dashboard.
+    """    
+    criteria_check_tuple = (df[(df['so2'] >= 97) & (df['so2'] <= 100)].shape[0] > 0,
+                      df[(df['so2'] >= 67) & (df['so2'] <= 73)].shape[0] > 0,
+                      (df[(df['so2'] >= 70) & (df['so2'] <= 80)].shape[0] >= 6) and 
+                      (df[(df['so2'] >= 80) & (df['so2'] <= 90)].shape[0] >= 6) and
+                      (df[(df['so2'] >= 90) & (df['so2'] <= 100)].shape[0] >= 6))
+    criteria_check_df = pd.DataFrame({'#so2 in 97-100': [df[(df['so2'] >= 97) & (df['so2'] <= 100)].shape[0]],
+                                      '#so2 in 67-73': [df[(df['so2'] >= 67) & (df['so2'] <= 73)].shape[0]],
+                                      '#so2 in 70-80': [df[(df['so2'] >= 70) & (df['so2'] <= 80)].shape[0]],
+                                      '#so2 in 80-90': [df[(df['so2'] >= 80) & (df['so2'] <= 90)].shape[0]],
+                                      '#so2 in 90-100': [df[(df['so2'] >= 90) & (df['so2'] <= 100)].shape[0]]})
+    return criteria_check_tuple, criteria_check_df
