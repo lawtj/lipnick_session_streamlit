@@ -53,6 +53,7 @@ st.markdown('#### Session Criteria Check')
 
 one, two = st.columns(2)
 with one:
+    print(criteria_check_df.columns)
     st.dataframe(criteria_check_df.style.map(lambda x: 'background-color: yellow' if x<1 else '', subset=['#so2 in 97-100', '#so2 in 67-73'])
                                         .map(lambda x: 'background-color: yellow' if x<6 else '', subset=['#so2 in 70-80', '#so2 in 80-90', '#so2 in 90-100']))
 
@@ -65,7 +66,7 @@ with two:
         st.success('at least one so2 data point in 67-73 range')
     else:
         st.error('no so2 data points in 67-73 range')
-    if criteria_check_tuple[0]:
-        st.success('at least 6 so2 data points in 70-80 range')
+    if criteria_check_tuple[2]:
+        st.success('at least 6 so2 data points in each 3 plateaus')
     else:
-        st.error('less than 6 so2 data points in 70-80 range')
+        st.error('less than 6 so2 data points in 1 or more plateaus')
