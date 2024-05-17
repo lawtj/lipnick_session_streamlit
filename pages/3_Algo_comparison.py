@@ -7,12 +7,16 @@ import io
 import plotly.graph_objects as go
 from session_functions import create_scatter
 import openox as ox
+import os
 
 st.set_page_config(layout="wide", )
 
 def get_labview_samples():
     api_url = 'https://redcap.ucsf.edu/api/'
-    api_k = st.secrets['api_k']
+    try:
+        api_k = st.secrets['api_k']
+    except:
+        api_k = os.environ['REDCAP_FILE_RESPOSITORY']
     proj = Project(api_url, api_k)
     f = io.BytesIO(proj.export_file(record='9', field='file')[0])
     labview_samples = pd.read_csv(f)
@@ -46,5 +50,22 @@ st.plotly_chart(create_scatter(frame, plotcolumns=['so2', 'Nellcor/SpO2'], style
 st.dataframe(frame.set_index('sample').drop(['Unnamed: 0', 'Timestamp','sample_diff_prev','sample_diff_next'], axis=1).style.format(precision=2).map(lambda x: 'background-color: yellow' if 'reject' in str(x)  else ''))
 
 st.markdown('#### Session Criteria Check')
-st.dataframe(criteria_check_df.style.map(lambda x: 'background-color: yellow' if x<1 else '', subset=['#so2 in 97-100', '#so2 in 67-73'])
-                                    .map(lambda x: 'background-color: yellow' if x<6 else '', subset=['#so2 in 70-80', '#so2 in 80-90', '#so2 in 90-100']))
+
+one, two = st.columns(2)
+with one:
+    st.dataframe(criteria_check_df.style.map(lambda x: 'background-color: yellow' if x<1 else '', subset=['#so2 in 97-100', '#so2 in 67-73'])
+                                        .map(lambda x: 'background-color: yellow' if x<6 else '', subset=['#so2 in 70-80', '#so2 in 80-90', '#so2 in 90-100']))
+
+with two:
+    if criteria_check_tuple[0]:
+        st.success('at least one so2 data point in 97-100 range')
+    else:
+        st.error('no so2 data points in 97-100 range')
+    if criteria_check_tuple[1]:
+        st.success('at least one so2 data point in 67-73 range')
+    else:
+        st.error('no so2 data points in 67-73 range')
+    if criteria_check_tuple[0]:
+        st.success('at least 6 so2 data points in 70-80 range')
+    else:
+        st.error('less than 6 so2 data points in 70-80 range')

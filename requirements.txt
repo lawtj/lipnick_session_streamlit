@@ -2,3 +2,4 @@ pycap
 plotly
 pandas
 openpyxl
+streamlit
