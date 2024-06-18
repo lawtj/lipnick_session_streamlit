@@ -27,11 +27,11 @@ labview_samples = get_labview_samples()
 with st.sidebar:
     st.write('## Session Selector')
     st.markdown('### Filters')
-    st.write('Show only those sessions containing at least one sample greater than:')
+    st.write('Show session where maximum bias is >= :')
 
     
     ## selectbox for session
-    max_bias = st.number_input('Max Bias', 0, 20, 5, 1)
+    max_bias = st.number_input('Show biases greater than', 0, 20, 10, 1)
     sessionlist = labview_samples[labview_samples['bias'] >= max_bias]['session'].unique().tolist()
     st.write('Number of sessions: ', len(sessionlist))
     sessionlist.reverse()
@@ -42,12 +42,29 @@ with st.sidebar:
     
 
     criteria_check_tuple, criteria_check_df = ox.session_criteria_check(frame)
-    print(criteria_check_tuple)
     
 st.markdown('## Session ' + str(selected_session))
 st.write(frame)
 
-st.plotly_chart(px.scatter(frame, x='sample',y=['so2','Nellcor/SpO2']), use_container_width=True)
+plotcolumns = ['so2', 'Nellcor/SpO2','bias']
+from session_functions import colormap
+
+fig = go.Figure()
+for column in plotcolumns:
+    fig.add_trace(go.Scatter(
+        x=frame['sample'], y=frame[column],
+        mode='markers',
+        name=column,
+        marker=dict(
+            symbol= colormap[column][1],
+            color= colormap[column][0],
+            size=12,
+            opacity=0.8,
+            line=dict(width=1, color='DarkSlateGrey')
+        )
+    ))
+
+st.plotly_chart(fig, use_container_width=True)
 
 # st.plotly_chart(create_scatter(frame, plotcolumns=['so2', 'Nellcor/SpO2'],stylecolumns=[ 'so2','Nellcor/SpO2']), use_container_width=True)
 # st.plotly_chart(create_scatter(frame, plotcolumns=['so2', 'Nellcor/SpO2'], stylecolumns=[ 'so2','Nellcor/SpO2']), use_container_width=True)

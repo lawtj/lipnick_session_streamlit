@@ -100,13 +100,15 @@ def assign_marker_style(name_keep):
     elif name_keep == False:
         return 'cross'
 
-colormap = {'Masimo 97/SpO2':'IndianRed',
-            'masimo_bias':'IndianRed',
-            'Nellcor/SpO2':'palegreen',
-            'Nellcor_stable':'palegreen',
-            'so2':'powderblue',
-            'so2_range':'powderblue',
-            'so2_stable':'powderblue',}
+
+colormap = {'Masimo 97/SpO2': ('IndianRed', 'circle'),
+            'masimo_bias': ('IndianRed', 'circle'),
+            'Nellcor/SpO2': ('palegreen', 'circle'),
+            'Nellcor_stable': ('palegreen', 'circle'),
+            'so2': ('powderblue', 'circle'),
+            'so2_range': ('powderblue', 'circle'),
+            'so2_stable': ('powderblue', 'circle'),
+            'bias': ('IndianRed', 'cross')}
 
 def assign_marker_color(name_keep, column):
     if name_keep == True:
