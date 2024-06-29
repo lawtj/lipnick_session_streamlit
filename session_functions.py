@@ -108,7 +108,9 @@ colormap = {'Masimo 97/SpO2': ('IndianRed', 'circle'),
             'so2': ('powderblue', 'circle'),
             'so2_range': ('powderblue', 'circle'),
             'so2_stable': ('powderblue', 'circle'),
-            'bias': ('IndianRed', 'cross')}
+            'bias': ('IndianRed', 'cross'),
+            'sao2': ('powderblue', 'circle'),
+            'spo2': ('palegreen', 'circle'),}
 
 def assign_marker_color(name_keep, column):
     if name_keep == True:
