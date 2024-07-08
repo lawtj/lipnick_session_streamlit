@@ -28,7 +28,6 @@ with st.sidebar:
     st.write('## Session Selector')
     st.markdown('### Filters')
     st.write('Show session where maximum bias is >= :')
-
     
     ## selectbox for session
     max_bias = st.number_input('Show biases greater than', 0, 20, 10, 1)
@@ -37,10 +36,8 @@ with st.sidebar:
     sessionlist.reverse()
     selected_session = st.selectbox('Select a session', sessionlist)
     
-
     frame = labview_samples[labview_samples['session'] == selected_session]
     
-
     criteria_check_tuple, criteria_check_df = ox.session_criteria_check(frame)
     
 st.markdown('## Session ' + str(selected_session))
@@ -49,6 +46,12 @@ st.write(frame)
 plotcolumns = ['so2', 'Nellcor/SpO2','bias']
 from session_functions import colormap
 
+# create column 'col_so2_symbol' which is colormap['column'][1] if so2_stable is True, else 'cross'
+frame['so2_symbol'] = frame['so2_stable'].apply(lambda x: colormap['so2'][1] if x else 'cross')
+frame['Nellcor/SpO2_symbol'] = frame['Nellcor_stable'].apply(lambda x: colormap['Nellcor/SpO2'][1] if x else 'cross')
+frame['bias_symbol'] = colormap['bias'][1]
+
+
 fig = go.Figure()
 for column in plotcolumns:
     fig.add_trace(go.Scatter(
@@ -56,7 +59,7 @@ for column in plotcolumns:
         mode='markers',
         name=column,
         marker=dict(
-            symbol= colormap[column][1],
+            symbol= frame[column + '_symbol'],
             color= colormap[column][0],
             size=12,
             opacity=0.8,
@@ -65,10 +68,6 @@ for column in plotcolumns:
     ))
 
 st.plotly_chart(fig, use_container_width=True)
-
-# st.plotly_chart(create_scatter(frame, plotcolumns=['so2', 'Nellcor/SpO2'],stylecolumns=[ 'so2','Nellcor/SpO2']), use_container_width=True)
-# st.plotly_chart(create_scatter(frame, plotcolumns=['so2', 'Nellcor/SpO2'], stylecolumns=[ 'so2','Nellcor/SpO2']), use_container_width=True)
-
 
 st.markdown('#### Session Criteria Check')
 
