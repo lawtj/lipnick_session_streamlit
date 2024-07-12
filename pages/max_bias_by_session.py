@@ -24,14 +24,40 @@ def get_labview_samples():
 
 labview_samples = get_labview_samples()
 
+from exclude_unclean import drop_dict
+def label_manual_samples(labview_samples, drop_dict):
+    # label samples to be dropped
+    for session, samples in drop_dict.items():
+        labview_samples.loc[(labview_samples['session'] == session), 'manual_so2'] = 'keep'
+        labview_samples.loc[(labview_samples['session'] == session) & (labview_samples['sample'].isin(samples)), 'manual_so2'] = 'reject'
+    # now compare the manual_so2 column with the algo column
+    labview_samples['manual_algo_compare'] = None
+    # start with the samples that were rejected by the manual_so2 column but kept by the algo column
+    labview_samples.loc[(labview_samples['manual_so2'] == 'reject') & (labview_samples['so2_stable'] == True),'manual_algo_compare'] = 'manual reject'
+    # now the samples that were kept by the manual_so2 column but rejected by the algo column
+    labview_samples.loc[(labview_samples['manual_so2'] == 'keep') & (labview_samples['so2_stable'] == False),'manual_algo_compare'] = 'manual keep'
+    # label keep both
+    labview_samples.loc[(labview_samples['manual_so2'] == 'keep') & (labview_samples['so2_stable'] == True),'manual_algo_compare'] = 'keep (both)'
+    # label reject both
+    labview_samples.loc[(labview_samples['manual_so2'] == 'reject') & (labview_samples['so2_stable'] == False),'manual_algo_compare'] = 'reject (both)'
+
+label_manual_samples(labview_samples, drop_dict)
+
+
 with st.sidebar:
     st.write('## Session Selector')
     st.markdown('### Filters')
-    st.write('Show session where maximum bias is >= :')
     
+    limit_to_manual_sessions = st.checkbox('Limit to sessions undergoing manual review')
+
     ## selectbox for session
-    max_bias = st.number_input('Show biases greater than', 0, 20, 10, 1)
-    sessionlist = labview_samples[(labview_samples['bias'] >= max_bias) & (labview_samples['algo']=='keep')]['session'].unique().tolist()
+    max_bias = st.number_input('Show session where maximum bias is >= :', 0, 20, 10, 1)
+    sessionlist = labview_samples[(abs(labview_samples['bias']) >= max_bias) & (labview_samples['so2_stable']==True)]['session'].unique().tolist()
+    if limit_to_manual_sessions:
+        set1 = set(sessionlist)
+        set2 = set(labview_samples[labview_samples['manual_so2'] == 'reject']['session'].unique().tolist())
+        sessionlist = list(set1.intersection(set2))
+        sessionlist.sort()
     st.write('Number of sessions: ', len(sessionlist))
     sessionlist.reverse()
     selected_session = st.selectbox('Select a session', sessionlist)
@@ -50,6 +76,11 @@ with st.sidebar:
     else:
         frame = frame.drop(columns=['Masimo HB/SpO2','Masimo HB/SpO2_diff_prev','Masimo HB/SpO2_diff_next', 'Nellcor PM1000N-1/SpO2', 'Nellcor PM1000N-1/SpO2_diff_prev', 'Nellcor PM1000N-1/SpO2_diff_next', 'Rad97-60/SpO2', 'Rad97-60/SpO2_diff_prev', 'Rad97-60/SpO2_diff_next'])
     criteria_check_tuple, criteria_check_df = ox.session_criteria_check(frame)
+
+    #calculate stats on sessions that were manually reviewed
+    manual_stats_df = labview_samples[labview_samples['manual_so2'].notnull()]
+    st.write(manual_stats_df['manual_algo_compare'].value_counts(normalize=True).mul(100).round(2).astype(str) + '%')
+
     
 st.markdown('## Session ' + str(selected_session))
 st.write(frame.set_index('sample').drop(columns=['sample_diff_prev', 'sample_diff_next', ]))
@@ -60,17 +91,17 @@ from session_functions import colormap
 # create column 'col_so2_symbol' which is colormap['column'][1] if so2_stable is True, else 'cross'
 frame['so2_symbol'] = frame['so2_stable'].apply(lambda x: colormap['so2'][1] if x else 'cross')
 frame['Nellcor/SpO2_symbol'] = frame['Nellcor_stable'].apply(lambda x: colormap['Nellcor/SpO2'][1] if x else 'cross')
-frame['bias_symbol'] = colormap['bias'][1]
+# frame['bias_symbol'] = colormap['bias'][1]
+# bias should be circle unless bias is greater than max_bias then it should be other
+frame['bias_symbol'] = np.where(abs(frame['bias']) > max_bias, 'hexagram', 'circle')
 
-# create so2_line which = red if so2_stable is False AND bias > bias_threshold, else DarkSlateGrey
-# frame['so2_line'] = np.where((frame['so2_stable'] == True) & (frame['bias'] > max_bias), 'red', 'DarkSlateGrey')
 # ACTUALLY so2_line is always DarkSlateGrey
 frame['so2_line'] = 'DarkSlateGrey'
 
 # same for Nellcor/SpO2
-frame['Nellcor/SpO2_line'] = np.where((frame['Nellcor_stable'] == True) & (frame['bias'] > max_bias), 'red', 'DarkSlateGrey')
-# bias is always DarkSlateGrey
-frame['bias_line'] = 'DarkSlateGrey'
+frame['Nellcor/SpO2_line'] = np.where((frame['Nellcor_stable'] == True) & (abs(frame['bias']) > max_bias), 'red', 'DarkSlateGrey')
+# bias line should be blue if bias is greater than max_bias
+frame['bias_line'] = np.where(abs(frame['bias']) > max_bias, 'blue', 'DarkSlateGrey')
 
 
 fig = go.Figure()
@@ -86,10 +117,19 @@ for column in plotcolumns:
             opacity=0.8,
             line=dict(width=1.5, color=frame[column + '_line'])
         ),
-
     ))
+# add text labeling points for manual_algo_compare
+for index, row in frame.iterrows():
+    if row['manual_algo_compare'] == 'manual reject':
+        fig.add_annotation(x=row['sample'], y=row['so2']+10, text='manual reject', showarrow=True)
+    if row['manual_algo_compare'] == 'manual keep':
+        fig.add_annotation(x=row['sample'], y=row['so2'], text='manual keep', showarrow=True)
 
-st.write('Crosses indicate that the data point was rejected. Red outlines indicate Nellcor values where the bias is > threshold, but were not cleaned out.')
+st.write('''
+         * Crosses indicate that the data point was rejected by the algorithm (either so2 or Nellcor). 
+         * Nellcor: Red outlines indicate Nellcor values where the bias is > threshold, but were not cleaned out.
+        * Bias: Blue outlines indicate bias values > threshold.
+         ''')
 st.plotly_chart(fig, use_container_width=True)
 
 st.markdown('#### Session Criteria Check')
