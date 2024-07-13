@@ -49,9 +49,17 @@ with st.sidebar:
     st.markdown('### Filters')
     
     limit_to_manual_sessions = st.checkbox('Limit to sessions undergoing manual review')
+    show_cleaned = st.checkbox('Show cleaned out points', value=False, key='show_cleaned')
 
     ## selectbox for session
     max_bias = st.number_input('Show session where maximum bias is >= :', 0, 20, 10, 1)
+
+    if not show_cleaned:
+        # Add logic to set so2 and Nellcor/SpO2 to np.nan based on their stability
+        labview_samples['so2'] = labview_samples.apply(lambda row: row['so2'] if row['so2_stable'] else np.nan, axis=1)
+        labview_samples['Nellcor/SpO2'] = labview_samples.apply(lambda row: row['Nellcor/SpO2'] if row['Nellcor_stable'] else np.nan, axis=1)
+        # bias becomes np.nan if so2 or Nellcor/SpO2 is np.nan
+        labview_samples['bias'] = labview_samples.apply(lambda row: row['bias'] if pd.notnull(row['so2']) and (pd.notnull(row['Nellcor/SpO2']) or pd.notnull(row['Nellcor PM1000N-1/SpO2'])) else np.nan, axis=1)
     sessionlist = labview_samples[(abs(labview_samples['bias']) >= max_bias) & (labview_samples['so2_stable']==True)]['session'].unique().tolist()
     if limit_to_manual_sessions:
         set1 = set(sessionlist)
@@ -61,7 +69,6 @@ with st.sidebar:
     st.write('Number of sessions: ', len(sessionlist))
     sessionlist.reverse()
     selected_session = st.selectbox('Select a session', sessionlist)
-    
     frame = labview_samples[labview_samples['session'] == selected_session]
     frame = frame.drop(columns=['session'])
     if frame['Nellcor PM1000N-1/SpO2'].sum() >0:
@@ -83,6 +90,7 @@ with st.sidebar:
 
     
 st.markdown('## Session ' + str(selected_session))
+
 st.write(frame.set_index('sample').drop(columns=['sample_diff_prev', 'sample_diff_next', ]))
 
 plotcolumns = ['so2', 'Nellcor/SpO2','bias']
@@ -102,6 +110,7 @@ frame['so2_line'] = 'DarkSlateGrey'
 frame['Nellcor/SpO2_line'] = np.where((frame['Nellcor_stable'] == True) & (abs(frame['bias']) > max_bias), 'red', 'DarkSlateGrey')
 # bias line should be blue if bias is greater than max_bias
 frame['bias_line'] = np.where(abs(frame['bias']) > max_bias, 'blue', 'DarkSlateGrey')
+
 
 
 fig = go.Figure()
@@ -125,10 +134,10 @@ for index, row in frame.iterrows():
     if row['manual_algo_compare'] == 'manual keep':
         fig.add_annotation(x=row['sample'], y=row['so2'], text='manual keep', showarrow=True)
 
-st.write('''
+st.write(f'''
          * Crosses indicate that the data point was rejected by the algorithm (either so2 or Nellcor). 
-         * Nellcor: Red outlines indicate Nellcor values where the bias is > threshold, but were not cleaned out.
-        * Bias: Blue outlines indicate bias values > threshold.
+         * Nellcor: Red outlines indicate Nellcor values where the bias is > {max_bias}, but were not cleaned out.
+        * Bias: Blue outlines indicate bias values > {max_bias}.
          ''')
 st.plotly_chart(fig, use_container_width=True)
 
