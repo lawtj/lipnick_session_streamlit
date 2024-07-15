@@ -5,6 +5,7 @@ import io
 import plotly.graph_objects as go
 from session_functions import colormap
 import os
+import numpy as np
 
 st.set_page_config(layout="wide", )
 
@@ -20,6 +21,8 @@ def get_labview_samples():
     return labview_samples
 
 cleaned_merged = get_labview_samples()
+# keep to dorsal only for ITA
+cleaned_merged = cleaned_merged[cleaned_merged['group'] == 'Dorsal (B)']
 
 def clean_outlier_spo2(df, delta_threshold):
     """
@@ -44,7 +47,16 @@ def clean_outlier_spo2(df, delta_threshold):
     df_no_duplicates['spo2_delta_previous'].iloc[0] = 0
     df_no_duplicates['spo2_delta_next'].iloc[-1] = 0
     
-    df_no_duplicates['spo2_stable'] = (df_no_duplicates[['spo2_delta_previous', 'spo2_delta_next']].min(axis=1) < delta_threshold)
+    # df_no_duplicates['spo2_stable'] = (df_no_duplicates[['spo2_delta_previous', 'spo2_delta_next']].min(axis=1) < delta_threshold)
+    df_no_duplicates['spo2_stable'] = np.where(
+        df_no_duplicates.index == 0, 
+        df_no_duplicates['spo2_delta_next'] < delta_threshold,
+        np.where(
+            df_no_duplicates.index == len(df_no_duplicates) - 1,
+            df_no_duplicates['spo2_delta_previous'] < delta_threshold,
+            (df_no_duplicates[['spo2_delta_previous', 'spo2_delta_next']].min(axis=1) < delta_threshold)
+        )
+    )
     
     df = pd.merge(df, df_no_duplicates[['session', 'sample', 'spo2_delta_previous', 'spo2_delta_next', 'spo2_stable']], on=['session', 'sample'], how='left')
 
