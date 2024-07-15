@@ -50,11 +50,11 @@ def clean_outlier_spo2(df, delta_threshold):
     # df_no_duplicates['spo2_stable'] = (df_no_duplicates[['spo2_delta_previous', 'spo2_delta_next']].min(axis=1) < delta_threshold)
     df_no_duplicates['spo2_stable'] = np.where(
         df_no_duplicates.index == 0, 
-        df_no_duplicates['spo2_delta_next'] < delta_threshold,
+        df_no_duplicates['spo2_delta_next'] <= delta_threshold,
         np.where(
             df_no_duplicates.index == len(df_no_duplicates) - 1,
-            df_no_duplicates['spo2_delta_previous'] < delta_threshold,
-            (df_no_duplicates[['spo2_delta_previous', 'spo2_delta_next']].min(axis=1) < delta_threshold)
+            df_no_duplicates['spo2_delta_previous'] <= delta_threshold,
+            (df_no_duplicates[['spo2_delta_previous', 'spo2_delta_next']].min(axis=1) <= delta_threshold)
         )
     )
     
